@@ -1,11 +1,10 @@
-from starlette.config import Config
-from starlette.datastructures import Secret
+from pydantic_settings import BaseSettings, SecretStr
 
 try:
-    config = Config(".env")
+    config = BaseSettings(".env")
 except FileNotFoundError:
-    config = Config()
+    config = BaseSettings()
 
-DATABASE_URL = config("DATABASE_URL", cast=Secret)
+DATABASE_URL = config("DATABASE_URL", cast=SecretStr)
 
-TEST_DATABASE_URL = config("TEST_DATABASE_URL", cast=Secret)
+TEST_DATABASE_URL = config("TEST_DATABASE_URL", cast=SecretStr)

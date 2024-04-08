@@ -1,43 +1,28 @@
-# main.py
 from contextlib import contextmanager
-from typing import List, Optional
 from fastapi import FastAPI, Depends
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-from fastapi_neon import settings
-
+from sqlmodel import Session, SQLModel, create_engine, select, Field  # Add Field to the import statement
+from fastapi_neon.settings import settings  # Import settings from your settings file
 
 class Todo(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     content: str = Field(index=True)
 
+# Use the DATABASE_URL from settings
+connection_string = str(settings.DATABASE_URL)
 
-# only needed for psycopg 3 - replace postgresql
-# with postgresql+psycopg in settings.DATABASE_URL
-connection_string = str(settings.DATABASE_URL).replace(
-    "postgresql", "postgresql+psycopg"
-)
+# Create the engine
+engine = create_engine(connection_string)
 
-
-# recycle connections after 5 minutes
-# to correspond with the compute scale down
-engine = create_engine(
-    connection_string, connect_args={"sslmode": "require"}, pool_recycle=300
-)
-
-
+# Function to create tables
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-
-# The first part of the function, before the yield, will
-# be executed before the application starts.
-# https://fastapi.tiangolo.com/advanced/events/#lifespan-function
+# Context manager to create tables before app starts
 @contextmanager
 def lifespan(app: FastAPI):
     print("Creating tables..")
     create_db_and_tables()
     yield
-
 
 app = FastAPI(
     lifespan=lifespan,
@@ -51,16 +36,14 @@ app = FastAPI(
     ],
 )
 
-
+# Function to get session
 def get_session():
     with Session(engine) as session:
         yield session
 
-
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
-
 
 @app.post("/todos/", response_model=Todo)
 def create_todo(todo: Todo, session: Session = Depends(get_session)):
@@ -69,8 +52,8 @@ def create_todo(todo: Todo, session: Session = Depends(get_session)):
     session.refresh(todo)
     return todo
 
-
-@app.get("/todos/", response_model=List[Todo])
+# Corrected response_model usage
+@app.get("/todos/", response_model=list[Optional[Todo]])  # Corrected usage
 def read_todos(session: Session = Depends(get_session)):
     todos = session.exec(select(Todo)).all()
     return todos

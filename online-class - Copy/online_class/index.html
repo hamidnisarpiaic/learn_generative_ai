@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Frontend</title>
+</head>
+<body>
+    <h1>Welcome to FastAPI Frontend</h1>
+    <button onclick="fetchData()">Fetch Data</button>
+    <div id="output"></div>
+
+    <script>
+        async function fetchData() {
+            try {
+                const response = await fetch('http://localhost:8000/city'); // Replace with the correct URL
+                const data = await response.json();
+                document.getElementById('output').innerText = JSON.stringify(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+    </script>
+    
+</body>
+</html>
